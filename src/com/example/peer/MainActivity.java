@@ -5,18 +5,12 @@ import java.io.IOException;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.app.Activity;
 import android.content.Context;
 import android.view.Menu;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
-
-	private static final String DEFAULT_FILE_PATH = Environment
-			.getExternalStorageDirectory() + "/1.mp4";
-	private static final int VIDEO_WIDTH = 320;
-	private static final int VIDEO_HEIGHT = 240;
 
 	private TextView mTipsTextView;
 	private VideoServer mVideoServer;
@@ -26,8 +20,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		mTipsTextView = (TextView) findViewById(R.id.TipsTextView);
-		mVideoServer = new VideoServer(DEFAULT_FILE_PATH, VIDEO_WIDTH,
-				VIDEO_HEIGHT, VideoServer.DEFAULT_SERVER_PORT);
+		mVideoServer = new VideoServer(VideoServer.DEFAULT_SERVER_PORT);
 		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"
 				+ VideoServer.DEFAULT_SERVER_PORT);
 		try {
