@@ -80,32 +80,4 @@ public class Merge {
 		}
 		return ret;
 	}
-	
-	public static void main(String[] args) {
-		List<Piece> list = new ArrayList<Piece>();
-		Piece p1 = new Piece();
-		p1.setContentHash("a");
-		p1.setOffset(10);
-		p1.setLength(20);
-		Piece p2 = new Piece();
-		p2.setContentHash("b");
-		p2.setOffset(20);
-		p2.setLength(20);
-		Piece p3 = new Piece();
-		p3.setContentHash("c");
-		p3.setOffset(50);
-		p3.setLength(20);
-		Piece p4 = new Piece();
-		p4.setContentHash("d");
-		p4.setOffset(20);
-		p4.setLength(25);
-		list.add(p1);
-		list.add(p2);
-		list.add(p3);
-		list.add(p4);
-		List<Piece> res = new Merge().mergePeer(list);
-		for(Piece r : res) {
-			System.out.println(r.getContentHash()+":"+r.getOffset()+"~"+ (r.getOffset()+r.getLength()));
-		}
-	}
 }

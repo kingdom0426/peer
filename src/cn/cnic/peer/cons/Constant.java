@@ -73,4 +73,6 @@ public class Constant {
 	//本地文件的存储路径
 	public static final String SAVE_PATH = Environment.getExternalStorageDirectory().toString();
 	
+	public static String PEER_ID_VALUE = "dfsadf";
+	
 }

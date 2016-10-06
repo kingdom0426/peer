@@ -12,6 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.util.Log;
+
 import cn.cnic.peer.cons.Constant;
 import cn.cnic.peer.download.Download;
 import cn.cnic.peer.entity.Peer;
@@ -38,7 +40,7 @@ public class TCPThread implements Runnable {
 	}
 
 	public void run() {
-		System.out.println("已启动TCP线程，用于与TRACKER沟通");
+		Log.d("peer", "已启动TCP线程，用于与TRACKER沟通");
 		
 		try {
 			//启动上传信息线程，周期性上传数据

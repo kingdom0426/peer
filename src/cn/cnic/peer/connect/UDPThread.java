@@ -18,6 +18,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.util.Log;
+
 
 import cn.cnic.peer.cons.Constant;
 import cn.cnic.peer.entity.Peer;
@@ -28,7 +30,6 @@ import cn.cnic.peer.sqlite.DB;
 
 public class UDPThread implements Runnable {
 	
-	private String peerID;
 	public static List<Segment> segments = new ArrayList<Segment>();
 	
 	/**
@@ -41,17 +42,13 @@ public class UDPThread implements Runnable {
 	//这个map用来记录contentHash的所有片段
 	private Map<String, List<Piece>> mapPiece = new HashMap<String, List<Piece>>();
 	
-	public UDPThread(String peerID) {
-		this.peerID = peerID;
-	}
-	
 	public void run() {
-		System.out.println("已启动UDP线程，用于PEER之间进行通信");
+		Log.d("peer", "已启动UDP线程，用于PEER之间进行通信");
 		try {
 			DatagramSocket ds = new DatagramSocket(Constant.TRACKER_UDP_PORT);
 
 			// 启动心跳线程
-			new Thread(new HeartThread(ds, peerID)).start();
+			new Thread(new HeartThread(ds, Constant.PEER_ID_VALUE)).start();
 
 			// 循环接收
 			byte[] buf = new byte[1024];
@@ -61,9 +58,7 @@ public class UDPThread implements Runnable {
 				ds.receive(rp);
 				// 取出信息
 				String content = new String(rp.getData(), 0, rp.getLength());
-				System.out.println("-------------" + content);
 				JSONObject json = new JSONObject(content);
-				System.out.println(json.toString());
 				String contentHash = json.getString(Constant.CONTENT_HASH);
 				String action = json.getString(Constant.ACTION);
 				
@@ -110,7 +105,7 @@ public class UDPThread implements Runnable {
 						
 						//依次发送数据请求
 						for(Piece p : resultPieces) {
-							submitP2PPieceRequest(ds, contentHash, p.getOffset(), p.getLength(), p.getPeer().getUdpIp(), p.getPeer().getUdpPort());
+							UDP.submitP2PPieceRequest(ds, contentHash, p.getOffset(), p.getLength(), p.getPeer().getUdpIp(), p.getPeer().getUdpPort());
 						}
 						
 						//请求发送完毕后，将此任务从两个map中移走
@@ -129,14 +124,13 @@ public class UDPThread implements Runnable {
 						for(int j = 0; j < count; j++) {
 							byte[] data = new byte[1024];
 							fis.read(data, 0, 1000);
-							submitP2PPieceResponse(ds, contentHash, p.getOffset()+j*1000, 1000, ds.getInetAddress().getHostName(), ds.getPort(), data);
-							
+							UDP.submitP2PPieceResponse(ds, contentHash, p.getOffset()+j*1000, 1000, ds.getInetAddress().getHostName(), ds.getPort(), data);
 						}
 						if(p.getLength()%1000 != 0) {
 							int size = p.getLength()%1000;
 							byte[] data = new byte[size];
 							fis.read(data, 0, 1000);
-							submitP2PPieceResponse(ds, contentHash, p.getLength()/1000*1000, size, ds.getInetAddress().getHostName(), ds.getPort(), data);
+							UDP.submitP2PPieceResponse(ds, contentHash, p.getLength()/1000*1000, size, ds.getInetAddress().getHostName(), ds.getPort(), data);
 						}
 						fis.close();
 					}
@@ -175,7 +169,7 @@ public class UDPThread implements Runnable {
 						for(int j = 0; j < s.getPeerList().size(); i ++) {
 							Peer p = s.getPeerList().get(j);
 							//peer向tracker发送协助穿透请求
-							submitNATTraversalAssist(ds, p.getPeerID(), s.getContentHash());
+							UDP.submitNATTraversalAssist(ds, p.getPeerID(), s.getContentHash());
 							//新建一个线程，在线程中延迟两秒，再去发送握手请求（延迟两秒的目的是让对端的peer节点有时间去进行打洞）
 							new Thread(new HandShakeThread(ds, s.getContentHash(), p.getUdpIp(), p.getUdpPort())).start();
 						}
@@ -184,98 +178,6 @@ public class UDPThread implements Runnable {
 				Thread.sleep(Constant.RECEIVE_INTERVAL);
 			}
 			ds.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void submitNATTraversalAssist(DatagramSocket ds, String targetPeerID, String contentHash) {
-		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_NAT_TRAVERSAL_ASSIST);
-			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.TARGET_PEER_ID, targetPeerID);
-			json.put(Constant.CONTENT_HASH, contentHash);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(Constant.TRACKER_IP), Constant.TRACKER_UDP_PORT);
-			ds.send(p);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void submitNATTraversalOrder(DatagramSocket ds, String targetPeerID, String targetPeerIP, int targetPeerPort) {
-		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_NAT_TRAVERSAL_ORDER);
-			json.put(Constant.TARGET_PEER_ID, targetPeerID);
-			json.put(Constant.TARGET_PEER_IP, targetPeerIP);
-			json.put(Constant.TARGET_PEER_PORT, targetPeerPort);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
-			ds.send(p);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void submitP2PhandShakeRequest(DatagramSocket ds, String contentHash, String targetPeerIP, int targetPeerPort) {
-		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_P2P_HANDSHAKE_REQUEST);
-			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.CONTENT_HASH, contentHash);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
-			ds.send(p);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void submitP2PhandShakeResponse(DatagramSocket ds, String contentHash, List<Piece> pieces, String targetPeerIP, int targetPeerPort) {
-		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_P2P_HANDSHAKE_RESPONSE);
-			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.CONTENT_HASH, contentHash);
-			json.put(Constant.PIECES, pieces);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
-			ds.send(p);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void submitP2PPieceRequest(DatagramSocket ds, String contentHash, int requestOffset, int requestLength, String targetPeerIP, int targetPeerPort) {
-		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_P2P_PIECE_REQUEST);
-			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.CONTENT_HASH, contentHash);
-			json.put(Constant.REQUEST_OFFSET, requestOffset);
-			json.put(Constant.REQUEST_LENGTH, requestLength);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
-			ds.send(p);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void submitP2PPieceResponse(DatagramSocket ds, String contentHash, int dataOffset, int dataLength, String targetPeerIP, int targetPeerPort, byte[] bytes) {
-		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_P2P_PIECE_RESPONSE);
-			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.CONTENT_HASH, contentHash);
-			json.put(Constant.DATA_OFFSET, dataOffset);
-			json.put(Constant.DATA_LENGTH, dataLength);
-			json.put(Constant.DATA, bytes);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
-			ds.send(p);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
