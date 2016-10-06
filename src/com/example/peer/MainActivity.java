@@ -1,12 +1,23 @@
 package com.example.peer;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.UUID;
+
+import cn.cnic.peer.connect.TCPThread;
+import cn.cnic.peer.connect.UDPThread;
+import cn.cnic.peer.cons.Constant;
 
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.view.Menu;
 import android.widget.TextView;
 
@@ -20,9 +31,22 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		mTipsTextView = (TextView) findViewById(R.id.TipsTextView);
-		mVideoServer = new VideoServer(VideoServer.DEFAULT_SERVER_PORT);
-		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"
-				+ VideoServer.DEFAULT_SERVER_PORT);
+		mVideoServer = new VideoServer();
+		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"	+ Constant.LOCAL_SERVER_PORT);
+		
+		//获取peerID值
+		String peerID = getPeerID();
+		Constant.PEER_ID_VALUE = peerID;
+		//启动TCP连接tracker，用于与tracker通信
+		TCPThread tcp = new TCPThread();
+		Thread t1 = new Thread(tcp);
+		t1.start();
+//		
+//		//启动UDP线程，用于peer间数据通信
+//		UDPThread udp = new UDPThread();
+//		Thread t3 = new Thread(udp);
+//		t3.start();
+		
 		try {
 			mVideoServer.start();
 		} catch (IOException e) {
@@ -52,5 +76,35 @@ public class MainActivity extends Activity {
     
     private static String intToIpAddr(int ip) {
         return (ip & 0xff) + "." + ((ip>>8)&0xff) + "." + ((ip>>16)&0xff) + "." + ((ip>>24)&0xff);
+    }
+    
+    public String getPeerID() {
+    	BufferedReader br = null;
+    	BufferedWriter bw = null;
+    	String peerID = "";
+    	try {
+			File f = new File(Constant.SAVE_PATH + File.separator + "peerID.txt");
+			if(!f.exists()) {
+				f.createNewFile();
+			}
+			br = new BufferedReader(new FileReader(f));
+			bw = new BufferedWriter(new FileWriter(f));
+			if(f.length() == 0) {
+				peerID = UUID.randomUUID().toString();
+				bw.write(peerID);
+			} else {
+				peerID = br.readLine();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				bw.close();
+				br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+    	return peerID;
     }
 }

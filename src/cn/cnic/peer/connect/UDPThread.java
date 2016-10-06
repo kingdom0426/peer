@@ -22,6 +22,7 @@ import android.util.Log;
 
 
 import cn.cnic.peer.cons.Constant;
+import cn.cnic.peer.download.Download;
 import cn.cnic.peer.entity.Peer;
 import cn.cnic.peer.entity.Piece;
 import cn.cnic.peer.entity.Segment;
@@ -96,9 +97,9 @@ public class UDPThread implements Runnable {
 					//全部返回
 					if(total == current) {
 						//文件总大小（单位：kb）
-						int size = 10000;
+						int fileSize = 10000;
 						//进行视频拼接，得到需要请求的视频片段
-						List<Piece> resultPieces = generateFinalPieces(mapPiece.get(contentHash), size, ds, contentHash);
+						List<Piece> resultPieces = generateFinalPieces(mapPiece.get(contentHash), fileSize, ds, contentHash);
 						
 						//拼接完成后将记录从mapPiece中删除
 						mapPiece.remove(contentHash);
@@ -204,29 +205,25 @@ public class UDPThread implements Runnable {
 	 * @param size 文件大小
 	 * @return 最终需要请求的数据片段
 	 */
-	public List<Piece> generateFinalPieces(List<Piece> sourcePieces, int size, DatagramSocket ds, String contentHash) {
+	public List<Piece> generateFinalPieces(List<Piece> sourcePieces, int fileSize, DatagramSocket ds, String contentHash) {
 		//确定需从CDN上下载的片段list：先获取到本地局域网中的片段并集，剩下的就是需要从CDN上获取的
 		List<Piece> existPieces = new Merge().merge(sourcePieces);
 		for(int i = 0; i < existPieces.size(); i++) {
 			if(existPieces.get(i).getOffset() != 0) {
 				if(i == 0) {
-					downloadFromCDN("", 0, existPieces.get(i).getOffset());
+					Download.download("", 0, existPieces.get(i).getOffset(), "");
 				} else {
-					downloadFromCDN("", existPieces.get(i - 1).getOffset() + existPieces.get(i - 1).getLength(), existPieces.get(i).getOffset());
+					Download.download("", existPieces.get(i - 1).getOffset() + existPieces.get(i - 1).getLength(), existPieces.get(i).getOffset(), "");
 				}
 			}
 		}
 		Piece lastPiece = existPieces.get(existPieces.size() - 1);
 		int end = lastPiece.getOffset() + lastPiece.getLength();
-		if(end < size) {
-			downloadFromCDN("", end, size - end);
+		if(end < fileSize) {
+			Download.download("", end, fileSize - end, "");
 		}
 		
 		//从peer节点中下载的片段list
 		return new Merge().mergePeer(sourcePieces);
-	}
-	
-	public void downloadFromCDN(String url, int offset, int length) {
-		
 	}
 }

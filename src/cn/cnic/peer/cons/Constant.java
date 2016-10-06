@@ -3,7 +3,7 @@ package cn.cnic.peer.cons;
 import android.os.Environment;
 
 public class Constant {
-
+	
 	public static final String PEER_ID = "PeerID";
 	public static final String URL_HASH = "URLHash";
 	public static final String CONTENT_HASH = "ContentHash";
@@ -62,9 +62,10 @@ public class Constant {
 	public static final String PIECES = "Pieces";
 	public static final String DATA = "data";
 	
-	public static final String TRACKER_IP = "159.226.82.152";
-	public static final int TRACKER_TCP_PORT = 1234;
-	public static final int TRACKER_UDP_PORT = 8081;
+	public static final String TRACKER_IP = "192.168.1.135";
+	public static final int TRACKER_TCP_PORT = 10000;
+	public static final int TRACKER_UDP_PORT = 11000;
+	public static final int LOCAL_SERVER_PORT = 8088;
 	
 	public static final int HEART_BEAT_INTERVAL = 2000;
 	public static final int UPLOAD_INFO_INTERVAL = 5000;
