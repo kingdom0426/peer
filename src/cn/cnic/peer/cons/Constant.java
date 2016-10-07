@@ -74,10 +74,11 @@ public class Constant {
 	public static final int RECEIVE_INTERVAL = 2000;
 	
 	//本地文件的存储路径
-	public static final String SAVE_PATH = Environment.getRootDirectory()+"/peer/peer.txt";
+	public static final String SAVE_PATH = "file:/";
 
-
-	
 	public static String PEER_ID_VALUE = "qinyifangpeer";
 //	public static String PEER_ID_VALUE = "duxinpeer";
+	
+	public static String PEER_PUBLIC_IP = "";
+	public static int PEER_PUBLIC_PORT = 0;
 }

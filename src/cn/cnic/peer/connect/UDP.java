@@ -5,6 +5,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import cn.cnic.peer.cons.Constant;
@@ -62,7 +63,14 @@ public class UDP {
 			json.put(Constant.ACTION, Constant.ACTION_P2P_HANDSHAKE_RESPONSE);
 			json.put(Constant.PEER_ID, Constant.PEER_ID_VALUE);
 			json.put(Constant.CONTENT_HASH, contentHash);
-			json.put(Constant.PIECES, pieces);
+			JSONArray array = new JSONArray();
+			for(Piece p : pieces) {
+				JSONObject o = new JSONObject();
+				o.put("Offset", p.getOffset());
+				o.put("Length", p.getLength());
+				array.put(o);
+			}
+			json.put(Constant.PIECES, array);
 			String data = json.toString();
 			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
 			ds.send(p);

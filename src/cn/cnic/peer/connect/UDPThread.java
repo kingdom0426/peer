@@ -18,6 +18,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.example.peer.MainActivity;
+
 import android.util.Log;
 
 
@@ -65,7 +67,8 @@ public class UDPThread implements Runnable {
 				
 				//Tracker返回Peer的UDP心跳响应，内容包含Peer的公网IP地址和端口，Peer可以依据此信息判断自己的网络类型（如是否为NAT，即PubIP不等于LocalIP，暂时不适用）
 				if(action.equals(Constant.ACTION_HEARTBEAT_RESPONSE)) {
-					
+					Constant.PEER_PUBLIC_IP = json.getString(Constant.PUBLIC_UDP_IP);
+					Constant.PEER_PUBLIC_PORT = json.getInt(Constant.PUBLIC_UDP_PORT);
 				} 
 				
 				//UDP穿透响应，收到来自tracker的穿透响应后，peer向对端peer进行打洞，在此进行三次打洞
@@ -79,8 +82,19 @@ public class UDPThread implements Runnable {
 				
 				//收到握手请求后，返回本地所拥有的报文片段，并进行握手响应
 				else if(action.equals(Constant.ACTION_P2P_HANDSHAKE_REQUEST)) {
+					String contentHash = json.getString(Constant.CONTENT_HASH);
 //					List<Piece> pieces = DB.getPiecesByContentHash(contentHash);
-//					submitP2PhandShakeResponse(ds, contentHash, pieces, ds.getInetAddress().getHostName(), ds.getPort());
+					List<Piece> pieces = new ArrayList<Piece>();
+					Piece p = new Piece();
+					p.setContentHash(contentHash);
+					p.setOffset(0);
+					Peer peer = new Peer();
+					peer.setPeerID(Constant.PEER_ID_VALUE);
+					peer.setUdpIp(Constant.LOCAL_SERVER_IP);
+					peer.setUdpPort(Constant.PEER_UDP_PORT);
+					p.setPeer(peer);
+					pieces.add(p);
+					UDP.submitP2PhandShakeResponse(ds, contentHash, pieces, json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT));
 				} 
 				
 				//收到握手响应后，判断是否已全部返回，如果是，则对视频进行拼接
@@ -174,7 +188,7 @@ public class UDPThread implements Runnable {
 							//peer向tracker发送协助穿透请求
 							UDP.submitNATTraversalAssist(ds, p.getPeerID(), s.getContentHash());
 							//新建一个线程，在线程中延迟两秒，再去发送握手请求（延迟两秒的目的是让对端的peer节点有时间去进行打洞）
-							new Thread(new HandShakeThread(ds, s.getContentHash(), p.getUdpIp(), p.getUdpPort())).start();
+							new Thread(new HandShakeThread(ds, Constant.PEER_ID_VALUE, p.getUdpIp(), p.getUdpPort(), s.getContentHash())).start();
 						}
 						segments.remove(i);
 					}
@@ -190,7 +204,10 @@ public class UDPThread implements Runnable {
 	public void makeHole(DatagramSocket ds, String targetPeerIP, int targetPeerPort) {
 		try {
 			JSONObject json = new JSONObject();
+			json.put(Constant.ACTION, "makeHole");
 			json.put("info", "打洞");
+			json.put("targetPeerIP", targetPeerIP);
+			json.put("targetPeerPort", targetPeerPort);
 			String data = json.toString();
 			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
 			ds.send(p);
