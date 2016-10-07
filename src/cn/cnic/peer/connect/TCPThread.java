@@ -114,7 +114,7 @@ public class TCPThread implements Runnable {
 	private void send(JSONObject json, BufferedWriter writer) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("POST /get_peerlist HTTP/1.1\r\n");
-		sb.append("Host: " + getLocalIP() + "\r\n");
+		sb.append("Host: " + Constant.LOCAL_SERVER_IP + "\r\n");
 		sb.append("Content-Length: "+json.toString().length()+"\r\n");
 		sb.append("Connection: Keep-Alive\r\n\r\n");
 		sb.append(json.toString());
@@ -151,16 +151,5 @@ public class TCPThread implements Runnable {
 		http.setConnection(datas[3]);
 		http.setJson(datas[5]);
 		return http;
-	}
-	
-	public String getLocalIP() {
-		String ip = "";
-		try {
-			InetAddress addr = InetAddress.getLocalHost();
-			ip=addr.getHostAddress();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		return ip;
 	}
 }
