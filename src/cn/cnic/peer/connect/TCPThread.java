@@ -4,7 +4,9 @@ import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,9 +14,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.Context;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import cn.cnic.peer.cons.Constant;
@@ -43,41 +42,42 @@ public class TCPThread implements Runnable {
 			while (!isEnd) {
 				String data = receive(tcp);
 				Log.d("tcpmessage", data);
-				Http http = parseData(data);
-				String jsonData = http.getJson();
-				if(!jsonData.equals("") && jsonData != null) {
-					JSONObject json = new JSONObject(jsonData);
-					if(json.has(Constant.PEER_LIST)) {
-						JSONArray array = json.getJSONArray(Constant.PEER_LIST);
-						List<Peer> peerList = new ArrayList<Peer>();
-						for(int i = 0; i < array.length(); i ++) {
-							Peer peer = new Peer();
-							JSONObject peerJson = new JSONObject(array.get(i).toString());
-							peer.setPeerID(peerJson.getString(Constant.PEER_ID));
-							peer.setUdpIp(peerJson.getString(Constant.UDP_IP));
-							peer.setUdpPort(peerJson.getInt(Constant.UDP_PORT));
-							peerList.add(peer);
-						}
-						
-						//如果tracker中存在，就按tracker的指示去下载
-						if(peerList.size() > 0) {
-							Segment seg = new Segment();
-							seg.setContentHash(json.getString(Constant.CONTENT_HASH));
-							seg.setUrlHash(json.getString(Constant.URL_HASH));
-							seg.setPeerList(peerList);
-							UDPThread.segments.add(seg);
-							UDPThread.mapTotal.put(json.getString(Constant.CONTENT_HASH), peerList.size());
-							UDPThread.mapCurrent.put(json.getString(Constant.CONTENT_HASH), 0);
-						}
-						
-						//如果局域网中不存在，就从cdn中下载
-						else {
-							String url = json.getString(Constant.URL_HASH);
-							Download.downloadAll(url, url.substring(url.lastIndexOf("/"), url.length()));
+				if (data!=null && !"".equals(data)) {
+					Http http = parseData(data);
+					String jsonData = http.getJson();
+					if (!jsonData.equals("") && jsonData != null) {
+						JSONObject json = new JSONObject(jsonData);
+						if (json.has(Constant.PEER_LIST)) {
+							JSONArray array = json.getJSONArray(Constant.PEER_LIST);
+							List<Peer> peerList = new ArrayList<Peer>();
+							for (int i = 0; i < array.length(); i++) {
+								Peer peer = new Peer();
+								JSONObject peerJson = new JSONObject(array.get(i).toString());
+								peer.setPeerID(peerJson.getString(Constant.PEER_ID));
+								peer.setUdpIp(peerJson.getString(Constant.UDP_IP));
+								peer.setUdpPort(peerJson.getInt(Constant.UDP_PORT));
+								peerList.add(peer);
+							}
+
+							//如果tracker中存在，就按tracker的指示去下载
+							if (peerList.size() > 0) {
+								Segment seg = new Segment();
+								seg.setContentHash(json.getString(Constant.CONTENT_HASH));
+								seg.setUrlHash(json.getString(Constant.URL_HASH));
+								seg.setPeerList(peerList);
+								UDPThread.segments.add(seg);
+								UDPThread.mapTotal.put(json.getString(Constant.CONTENT_HASH),peerList.size());
+								UDPThread.mapCurrent.put(json.getString(Constant.CONTENT_HASH),0);
+							}
+
+							//如果局域网中不存在，就从cdn中下载
+							else {
+								String url = json.getString(Constant.URL_HASH);
+								Download.downloadAll(url,url.substring(url.lastIndexOf("/"),url.length()));
+							}
 						}
 					}
 				}
-				
 				if(sessions.size() > 0) {
 					for(int i = 0; i < sessions.size(); i++) {
 						//发送URL请求
@@ -114,7 +114,7 @@ public class TCPThread implements Runnable {
 	private void send(JSONObject json, BufferedWriter writer) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("POST /get_peerlist HTTP/1.1\r\n");
-		sb.append("Host: 192.168.199.104\r\n");
+		sb.append("Host: " + getLocalIP() + "\r\n");
 		sb.append("Content-Length: "+json.toString().length()+"\r\n");
 		sb.append("Connection: Keep-Alive\r\n\r\n");
 		sb.append(json.toString());
@@ -151,5 +151,16 @@ public class TCPThread implements Runnable {
 		http.setConnection(datas[3]);
 		http.setJson(datas[5]);
 		return http;
+	}
+	
+	public String getLocalIP() {
+		String ip = "";
+		try {
+			InetAddress addr = InetAddress.getLocalHost();
+			ip=addr.getHostAddress();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		return ip;
 	}
 }

@@ -17,10 +17,10 @@ public class HeartThread implements Runnable {
 		this.ds = ds;
 		try {
 			JSONObject json = new JSONObject();
-			json.put(Constant.ACTION, Constant.ACTION_HEARTBEAT_RESPONSE);
+			json.put(Constant.ACTION, Constant.ACTION_HEARTBEAT);
 			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.LOCAL_UDP_IP, "localhost");
-			json.put(Constant.LOCAL_UDP_PORT, "1234");
+			json.put(Constant.LOCAL_UDP_IP, "192.168.199.104");
+			json.put(Constant.LOCAL_UDP_PORT, Constant.PEER_UDP_PORT);
 			String data = json.toString();
 			p = new DatagramPacket(data.getBytes(), data.length(), InetAddress.getByName(Constant.TRACKER_IP), Constant.TRACKER_UDP_PORT);
 		} catch (Exception e) {

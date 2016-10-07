@@ -66,6 +66,8 @@ public class Constant {
 	public static final int TRACKER_TCP_PORT = 10000;
 	public static final int TRACKER_UDP_PORT = 11000;
 	public static final int LOCAL_SERVER_PORT = 8088;
+	public static String LOCAL_SERVER_IP = "";
+	public static final int PEER_UDP_PORT = 12000;
 	
 	public static final int HEART_BEAT_INTERVAL = 2000;
 	public static final int UPLOAD_INFO_INTERVAL = 5000;
@@ -75,5 +77,4 @@ public class Constant {
 	public static final String SAVE_PATH = Environment.getExternalStorageDirectory().toString();
 	
 	public static String PEER_ID_VALUE = "dfsadf";
-	
 }

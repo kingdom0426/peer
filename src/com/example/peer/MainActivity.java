@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
 		mTipsTextView = (TextView) findViewById(R.id.TipsTextView);
 		mVideoServer = new VideoServer();
 		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"	+ Constant.LOCAL_SERVER_PORT);
+		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
 		
 		//获取peerID值
 		String peerID = getPeerID();
@@ -41,11 +42,11 @@ public class MainActivity extends Activity {
 		TCPThread tcp = new TCPThread();
 		Thread t1 = new Thread(tcp);
 		t1.start();
-//		
-//		//启动UDP线程，用于peer间数据通信
-//		UDPThread udp = new UDPThread();
-//		Thread t3 = new Thread(udp);
-//		t3.start();
+		
+		//启动UDP线程，用于peer间数据通信
+		UDPThread udp = new UDPThread();
+		Thread t3 = new Thread(udp);
+		t3.start();
 		
 		try {
 			mVideoServer.start();

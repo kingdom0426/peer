@@ -59,8 +59,8 @@ public class UDPThread implements Runnable {
 				ds.receive(rp);
 				// 取出信息
 				String content = new String(rp.getData(), 0, rp.getLength());
+				Log.d("udp", content);
 				JSONObject json = new JSONObject(content);
-				String contentHash = json.getString(Constant.CONTENT_HASH);
 				String action = json.getString(Constant.ACTION);
 				
 				//Tracker返回Peer的UDP心跳响应，内容包含Peer的公网IP地址和端口，Peer可以依据此信息判断自己的网络类型（如是否为NAT，即PubIP不等于LocalIP，暂时不适用）
@@ -70,6 +70,7 @@ public class UDPThread implements Runnable {
 				
 				//UDP穿透响应，收到来自tracker的穿透响应后，peer向对端peer进行打洞，在此进行三次打洞
 				else if(action.equals(Constant.ACTION_NAT_TRAVERSAL_ORDER)) {
+					String contentHash = json.getString(Constant.CONTENT_HASH);
 					String targetPeerIP = json.getString(Constant.TARGET_PEER_IP);
 					String targetPeerPort = json.getString(Constant.TARGET_PEER_PORT);
 					makeHole(ds, targetPeerIP, Integer.parseInt(targetPeerPort));
@@ -85,6 +86,7 @@ public class UDPThread implements Runnable {
 				
 				//收到握手响应后，判断是否已全部返回，如果是，则对视频进行拼接
 				else if(action.equals(Constant.ACTION_P2P_HANDSHAKE_RESPONSE)) {
+					String contentHash = json.getString(Constant.CONTENT_HASH);
 					JSONArray pieces = new JSONArray(json.get(Constant.PIECES).toString());
 					if(!mapPiece.containsKey(contentHash)) {
 						mapPiece.put(contentHash, new ArrayList<Piece>());
@@ -117,9 +119,10 @@ public class UDPThread implements Runnable {
 				
 				//收到报文请求后，向请求方发送报文数据
 				else if(action.equals(Constant.ACTION_P2P_PIECE_REQUEST)) {
+					String contentHash = json.getString(Constant.CONTENT_HASH);
 					JSONArray array = new JSONArray(json.get(Constant.PIECES).toString());
 					for(int i = 0; i < array.length(); i++) {
-						DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream("filePath")));
+						DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream(Constant.SAVE_PATH + "/" + contentHash)));
 						Piece p = (Piece)array.get(i);
 						int count = p.getLength()/1000;
 						for(int j = 0; j < count; j++) {
@@ -139,7 +142,7 @@ public class UDPThread implements Runnable {
 				
 				//接收到对端peer传来的数据相应后
 				else if(action.equals(Constant.ACTION_P2P_PIECE_RESPONSE)) {
-					
+					String contentHash = json.getString(Constant.CONTENT_HASH);
 					//以contentHash作为文件名，如果不存在，就创建
 					File f = new File(Constant.SAVE_PATH + contentHash);
 					if(!f.exists()) {
@@ -211,9 +214,9 @@ public class UDPThread implements Runnable {
 		for(int i = 0; i < existPieces.size(); i++) {
 			if(existPieces.get(i).getOffset() != 0) {
 				if(i == 0) {
-					Download.download("", 0, existPieces.get(i).getOffset(), "");
+					Download.download("", 0, existPieces.get(i).getOffset(), contentHash);
 				} else {
-					Download.download("", existPieces.get(i - 1).getOffset() + existPieces.get(i - 1).getLength(), existPieces.get(i).getOffset(), "");
+					Download.download("", existPieces.get(i - 1).getOffset() + existPieces.get(i - 1).getLength(), existPieces.get(i).getOffset(), contentHash);
 				}
 			}
 		}

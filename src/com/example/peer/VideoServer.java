@@ -30,7 +30,8 @@ public class VideoServer extends NanoHTTPD {
     	if(!DB.isLocalExist(tsId, fileSize)) {
     		TCPThread.sessions.add(session);
     	}
-        return responseVideoStream(tsId);
+//        return responseVideoStream(tsId);
+    	return null;
     }
     
     public Response responseVideoStream(String tsId) {
