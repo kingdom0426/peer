@@ -6,7 +6,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 
 import cn.cnic.peer.connect.TCPThread;
 import cn.cnic.peer.connect.UDPThread;
@@ -17,7 +18,6 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
 import android.view.Menu;
 import android.widget.TextView;
 
@@ -25,6 +25,7 @@ public class MainActivity extends Activity {
 
 	private TextView mTipsTextView;
 	private VideoServer mVideoServer;
+	public static Map<String, Boolean> map = new HashMap<String, Boolean>();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -35,9 +36,6 @@ public class MainActivity extends Activity {
 		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"	+ Constant.LOCAL_SERVER_PORT);
 		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
 		
-		//获取peerID值
-		String peerID = getPeerID();
-		Constant.PEER_ID_VALUE = peerID;
 		//启动TCP连接tracker，用于与tracker通信
 		TCPThread tcp = new TCPThread();
 		Thread t1 = new Thread(tcp);
@@ -79,33 +77,28 @@ public class MainActivity extends Activity {
         return (ip & 0xff) + "." + ((ip>>8)&0xff) + "." + ((ip>>16)&0xff) + "." + ((ip>>24)&0xff);
     }
     
-    public String getPeerID() {
-    	BufferedReader br = null;
-    	BufferedWriter bw = null;
-    	String peerID = "";
-    	try {
-			File f = new File(Constant.SAVE_PATH + File.separator + "peerID.txt");
-			if(!f.exists()) {
-				f.createNewFile();
-			}
-			br = new BufferedReader(new FileReader(f));
-			bw = new BufferedWriter(new FileWriter(f));
-			if(f.length() == 0) {
-				peerID = UUID.randomUUID().toString();
-				bw.write(peerID);
-			} else {
-				peerID = br.readLine();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				bw.close();
-				br.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-    	return peerID;
-    }
+//    public String getPeerID() {
+//    	BufferedReader br = null;
+//    	BufferedWriter bw = null;
+//    	String peerID = "";
+//    	try {
+//			File f = new File(Constant.SAVE_PATH);
+//			if(!f.exists()) {
+//				f.createNewFile();
+//			}
+//			br = new BufferedReader(new FileReader(f));
+//			bw = new BufferedWriter(new FileWriter(f));
+//			peerID = br.readLine();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		} finally {
+//			try {
+//				bw.close();
+//				br.close();
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//    	return peerID;
+//    }
 }

@@ -70,7 +70,6 @@ public class UDPThread implements Runnable {
 				
 				//UDP穿透响应，收到来自tracker的穿透响应后，peer向对端peer进行打洞，在此进行三次打洞
 				else if(action.equals(Constant.ACTION_NAT_TRAVERSAL_ORDER)) {
-					String contentHash = json.getString(Constant.CONTENT_HASH);
 					String targetPeerIP = json.getString(Constant.TARGET_PEER_IP);
 					String targetPeerPort = json.getString(Constant.TARGET_PEER_PORT);
 					makeHole(ds, targetPeerIP, Integer.parseInt(targetPeerPort));
@@ -170,13 +169,14 @@ public class UDPThread implements Runnable {
 						Segment s = segments.get(i);
 						
 						//依次遍历tracker返回的每一个peer
-						for(int j = 0; j < s.getPeerList().size(); i ++) {
+						for(int j = 0; j < s.getPeerList().size(); j ++) {
 							Peer p = s.getPeerList().get(j);
 							//peer向tracker发送协助穿透请求
 							UDP.submitNATTraversalAssist(ds, p.getPeerID(), s.getContentHash());
 							//新建一个线程，在线程中延迟两秒，再去发送握手请求（延迟两秒的目的是让对端的peer节点有时间去进行打洞）
 							new Thread(new HandShakeThread(ds, s.getContentHash(), p.getUdpIp(), p.getUdpPort())).start();
 						}
+						segments.remove(i);
 					}
 				}
 				Thread.sleep(Constant.RECEIVE_INTERVAL);

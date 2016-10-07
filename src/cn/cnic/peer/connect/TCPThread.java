@@ -4,9 +4,7 @@ import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,7 +102,7 @@ public class TCPThread implements Runnable {
 		try {
 			JSONObject json = new JSONObject();
 			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.URL_HASH, "1111111111111111111111111111111111111111");
+			json.put(Constant.URL_HASH, "08f12c16dd8742974f539ad374e108f7c5cb914e");
 			send(json, writer);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -121,6 +119,7 @@ public class TCPThread implements Runnable {
 		try {
 			writer.write(sb.toString());
 			writer.flush();
+			Log.d("tcpsend", sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

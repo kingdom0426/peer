@@ -13,6 +13,7 @@ import java.util.List;
 
 import cn.cnic.peer.cons.Constant;
 import cn.cnic.peer.entity.Piece;
+import cn.cnic.peer.entity.UrlContentMap;
 import cn.cnic.peer.merge.Merge;
 
 public class DB {
@@ -57,6 +58,43 @@ public class DB {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void insertUrlContentMap(UrlContentMap umap) {
+		try {
+			Connection conn = DB.openConnection();
+			String sql = "INSERT INTO url_content_map (url,contentHash) VALUES (?,?);"; 
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			stmt.setString(1, umap.getUrlHash());
+			stmt.setString(2, umap.getContentHash());
+			stmt.executeUpdate();
+			stmt.close();
+			DB.closeConnection();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static UrlContentMap getUrlContentMap(String urlHash) {
+		UrlContentMap map = null;
+		try {
+			Connection conn = DB.openConnection();
+			String sql = "SELECT * FROM url_content_map where urlHash = ?;";
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			stmt.setString(1, urlHash);
+			ResultSet rs = stmt.executeQuery();
+			while (rs.next()) {
+				map = new UrlContentMap();
+				map.setUrlHash(rs.getString("urlHash"));
+				map.setContentHash(rs.getString("contentHash"));
+			}
+			rs.close();
+			stmt.close();
+			DB.closeConnection();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return map;
 	}
 	
 	public static List<Piece> getPiecesByContentHash(String contentHash) {

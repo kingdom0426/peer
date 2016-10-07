@@ -27,9 +27,18 @@ public class VideoServer extends NanoHTTPD {
     	int fileSize = getFileSize(session);
     	
     	//如果本地不存在该文件，或文件大小不完整，就去tracker中请求
-    	if(!DB.isLocalExist(tsId, fileSize)) {
+//    	if(!DB.isLocalExist(tsId, fileSize)) {
     		TCPThread.sessions.add(session);
-    	}
+//    	}
+//    	MainActivity.map.put(session.getUri(), false);
+//    	while(!MainActivity.map.get(session.getUri())) {
+//    		try {
+//				Thread.sleep(2000);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//    	}
+    	
 //        return responseVideoStream(tsId);
     	return null;
     }
@@ -52,6 +61,8 @@ public class VideoServer extends NanoHTTPD {
     
     public static int getFileSize(IHTTPSession session) {
     	Map<String, String> map = session.getParms();
-    	return Integer.parseInt(map.get("fileSize"));
+//    	return Integer.parseInt(map.get("fileSize"));
+    	
+    	return 123;
     }
 }

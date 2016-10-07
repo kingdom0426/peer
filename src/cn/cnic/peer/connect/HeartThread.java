@@ -20,7 +20,7 @@ public class HeartThread implements Runnable {
 			json.put(Constant.ACTION, Constant.ACTION_HEARTBEAT);
 			json.put(Constant.PEER_ID, peerID);
 			json.put(Constant.LOCAL_UDP_IP, Constant.LOCAL_SERVER_IP);
-			json.put(Constant.LOCAL_UDP_PORT, Constant.LOCAL_UDP_PORT);
+			json.put(Constant.LOCAL_UDP_PORT, Constant.PEER_UDP_PORT);
 			String data = json.toString();
 			p = new DatagramPacket(data.getBytes(), data.length(), InetAddress.getByName(Constant.TRACKER_IP), Constant.TRACKER_UDP_PORT);
 		} catch (Exception e) {

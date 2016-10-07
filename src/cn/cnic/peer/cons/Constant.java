@@ -44,7 +44,7 @@ public class Constant {
 	public static final String ACTION_P2P_PIECE_REQUEST = "P2PPieceRequest";
 	public static final String ACTION_P2P_PIECE_RESPONSE = "P2PPieceResponse";
 	public static final String LOCAL_UDP_IP = "LocalUDPIP";
-	public static final String LOCAL_UDP_PORT = "12000";
+	public static final String LOCAL_UDP_PORT = "LocalUDPPort";
 	public static final String PUBLIC_UDP_IP = "PublicUDPIP";
 	public static final String PUBLIC_UDP_PORT = "PublicUDPPort";
 	public static final String TARGET_PEER_ID = "TargetPeerID";
@@ -67,13 +67,17 @@ public class Constant {
 	public static final int TRACKER_UDP_PORT = 11000;
 	public static final int LOCAL_SERVER_PORT = 8088;
 	public static String LOCAL_SERVER_IP = "";
+	public static final int PEER_UDP_PORT = 12000;
 	
 	public static final int HEART_BEAT_INTERVAL = 2000;
 	public static final int UPLOAD_INFO_INTERVAL = 5000;
 	public static final int RECEIVE_INTERVAL = 2000;
 	
 	//本地文件的存储路径
-	public static final String SAVE_PATH = Environment.getExternalStorageDirectory().toString();
+	public static final String SAVE_PATH = Environment.getRootDirectory()+"/peer/peer.txt";
+
+
 	
-	public static String PEER_ID_VALUE = "dfsadf";
+	public static String PEER_ID_VALUE = "qinyifangpeer";
+//	public static String PEER_ID_VALUE = "duxinpeer";
 }
