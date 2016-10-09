@@ -9,11 +9,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import cn.cnic.peer.cons.Constant;
-
 public class Download {
 
-	public static void download(String url, int offset, int length, String tsId) {
+	public static void download(String url, int offset, int length, String contentHash, String path) {
 		int BUFFER = 1024;
 
 		HttpClient client = new DefaultHttpClient();
@@ -22,7 +20,15 @@ public class Download {
 			HttpResponse response = client.execute(httpGet);
 			InputStream in = response.getEntity().getContent();
 			in.skip(offset);
-			FileOutputStream out = new FileOutputStream(new File(Constant.SAVE_PATH + File.separator + tsId));
+			File folder = new File(path);
+			if(!folder.exists()) {
+				folder.mkdirs();
+			}
+			File file = new File(path + contentHash);
+			if(!file.exists()) {
+				file.createNewFile();
+			}
+			FileOutputStream out = new FileOutputStream(file);
 		    byte[] b = new byte[BUFFER];
 		    int len = 0;
 		    while((len=in.read(b))!= -1){
@@ -41,7 +47,7 @@ public class Download {
 		}
 	}
 	
-	public static void downloadAll(String url, String tsId) {
+	public static void downloadAll(String url, String contentHash, String path) {
 		int BUFFER = 1024;
 
 		HttpClient client = new DefaultHttpClient();
@@ -49,7 +55,15 @@ public class Download {
 		try {
 			HttpResponse response = client.execute(httpGet);
 			InputStream in = response.getEntity().getContent();
-			FileOutputStream out = new FileOutputStream(new File(Constant.SAVE_PATH + File.separator + tsId));
+			File folder = new File(path);
+			if(!folder.exists()) {
+				folder.mkdirs();
+			}
+			File file = new File(path + contentHash);
+			if(!file.exists()) {
+				file.createNewFile();
+			}
+			FileOutputStream out = new FileOutputStream(file);
 		    byte[] b = new byte[BUFFER];
 		    int len = 0;
 		    while((len=in.read(b))!= -1){

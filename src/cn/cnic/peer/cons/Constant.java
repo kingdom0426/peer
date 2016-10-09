@@ -74,7 +74,7 @@ public class Constant {
 	public static final int RECEIVE_INTERVAL = 2000;
 	
 	//本地文件的存储路径
-	public static final String SAVE_PATH = "file:/";
+	public static final String SAVE_PATH = Environment.getDataDirectory().getPath()+"/data/com.example.peer/";
 
 	public static String PEER_ID_VALUE = "qinyifangpeer";
 //	public static String PEER_ID_VALUE = "duxinpeer";

@@ -12,6 +12,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.example.peer.MainActivity;
+
+import android.os.Environment;
 import android.util.Log;
 
 import cn.cnic.peer.cons.Constant;
@@ -29,7 +32,11 @@ public class TCPThread implements Runnable {
 	public void run() {
 		Log.d("peer", "已启动TCP线程，用于与TRACKER沟通");
 		
+//		Download.downloadAll("http://111.39.226.112:8114/VODS/1092287_142222153_0002222153_0056541188_0057413695.ts?Fsv_Sd=10&Fsv_filetype=2&Provider_id=gslb/program&Pcontent_id=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&FvOPid=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&Fsv_MBt=0&FvHlsIdx=3&UserID=&Fsv_otype=0&FvSeid=54e0e9c78502314b", 
+//				"40dc2249423e63484e291ad0eeef2c0ba870b027", Constant.SAVE_PATH);
+		
 		try {
+
 			Socket tcp = new Socket(Constant.TRACKER_IP, Constant.TRACKER_TCP_PORT);
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(tcp.getOutputStream()));
 			//启动上传信息线程，周期性上传数据
@@ -71,7 +78,7 @@ public class TCPThread implements Runnable {
 							//如果局域网中不存在，就从cdn中下载
 							else {
 								String url = json.getString(Constant.URL_HASH);
-								Download.downloadAll(url,url.substring(url.lastIndexOf("/"),url.length()));
+								Download.downloadAll(url, json.getString(Constant.CONTENT_HASH), Constant.SAVE_PATH);
 							}
 						}
 					}
@@ -85,7 +92,7 @@ public class TCPThread implements Runnable {
 						sessions.remove(i);
 					}
 				}
-				Thread.sleep(Constant.RECEIVE_INTERVAL);
+//				Thread.sleep(Constant.RECEIVE_INTERVAL);
 			}
 			tcp.close();
 		} catch (Exception e) {

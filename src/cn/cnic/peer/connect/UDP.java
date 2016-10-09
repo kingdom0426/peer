@@ -8,6 +8,8 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.util.Log;
+
 import cn.cnic.peer.cons.Constant;
 import cn.cnic.peer.entity.Piece;
 
@@ -63,6 +65,8 @@ public class UDP {
 			json.put(Constant.ACTION, Constant.ACTION_P2P_HANDSHAKE_RESPONSE);
 			json.put(Constant.PEER_ID, Constant.PEER_ID_VALUE);
 			json.put(Constant.CONTENT_HASH, contentHash);
+			json.put(Constant.PUBLIC_UDP_IP, Constant.PEER_PUBLIC_IP);
+			json.put(Constant.PUBLIC_UDP_PORT, Constant.PEER_PUBLIC_PORT);
 			JSONArray array = new JSONArray();
 			for(Piece p : pieces) {
 				JSONObject o = new JSONObject();
@@ -87,7 +91,10 @@ public class UDP {
 			json.put(Constant.CONTENT_HASH, contentHash);
 			json.put(Constant.REQUEST_OFFSET, requestOffset);
 			json.put(Constant.REQUEST_LENGTH, requestLength);
+			json.put(Constant.PUBLIC_UDP_IP, Constant.PEER_PUBLIC_IP);
+			json.put(Constant.PUBLIC_UDP_PORT, Constant.PEER_PUBLIC_PORT);
 			String data = json.toString();
+			Log.d("udpsend", data);
 			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
 			ds.send(p);
 		} catch (Exception e) {
@@ -103,12 +110,16 @@ public class UDP {
 			json.put(Constant.CONTENT_HASH, contentHash);
 			json.put(Constant.DATA_OFFSET, dataOffset);
 			json.put(Constant.DATA_LENGTH, dataLength);
-			json.put(Constant.DATA, bytes);
-			String data = json.toString();
-			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
+			Log.d("video", json.toString());
+			byte[] header = json.toString().getBytes();
+			byte[] data = new byte[header.length + bytes.length];
+			System.arraycopy(header,0,data,0,header.length);
+			System.arraycopy(bytes,0,data,header.length,bytes.length);
+			DatagramPacket p = new DatagramPacket(data, data.length, InetAddress.getByName(targetPeerIP), targetPeerPort);
 			ds.send(p);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 }
