@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -20,6 +21,8 @@ import org.json.JSONObject;
 
 import com.example.peer.VideoServer;
 
+import android.os.Environment;
+import android.provider.MediaStore.Video;
 import android.util.Log;
 
 import cn.cnic.peer.cons.Constant;
@@ -68,12 +71,14 @@ public class UDPThread implements Runnable {
 				String content = "";
 				int endIndex = 0;
 				for(int i = 0; i < buf.length; i++) {
+					
 					if((char)buf[i] == '}') {
-						content = new String(buf, 0, i+1);
-						endIndex = i;
-						break;
+						if(i > endIndex) {
+							endIndex = i;
+						}
 					}
 				}
+				content = new String(buf, 0, endIndex+1);
 				Log.d("udp", content);
 				JSONObject json = new JSONObject(content);
 				Log.d("json", json.toString());
@@ -115,6 +120,7 @@ public class UDPThread implements Runnable {
 				//收到握手响应后，判断是否已全部返回，如果是，则对视频进行拼接
 				else if(action.equals(Constant.ACTION_P2P_HANDSHAKE_RESPONSE)) {
 					String contentHash = json.getString(Constant.CONTENT_HASH);
+//					mapCurrent.put(contentHash, mapCurrent.get(contentHash) + 1);
 					mapCurrent.put(contentHash, mapCurrent.get(contentHash) + 1);
 					JSONArray pieces = new JSONArray(json.get(Constant.PIECES).toString());
 					if(!mapPiece.containsKey(contentHash)) {
@@ -169,10 +175,10 @@ public class UDPThread implements Runnable {
 					while(i <= length) {
 						if(length - i > data.length) {
 							fis.read(data, 0, data.length);
-							UDP.submitP2PPieceResponse(ds, contentHash, offset, data.length, json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT), data);
+							UDP.submitP2PPieceResponse(ds, contentHash, offset + i, data.length, json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT), data);
 						} else {
 							fis.read(data, 0, length - i);
-							UDP.submitP2PPieceResponse(ds, contentHash, offset, length - i, json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT), data);
+							UDP.submitP2PPieceResponse(ds, contentHash, offset + i, length - i, json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT), data);
 						}
 						i += data.length;
 					}
@@ -184,20 +190,24 @@ public class UDPThread implements Runnable {
 					String contentHash = json.getString(Constant.CONTENT_HASH);
 //					dataMapCurrent.put(contentHash, dataMapCurrent.get(contentHash) + 1);
 					//以contentHash作为文件名，如果不存在，就创建
-					File f = new File(Constant.SAVE_PATH + contentHash);
+					File f = new File(Environment.getExternalStorageDirectory() + "/" + contentHash);
 					if(!f.exists()) {
 						f.createNewFile();
 					}
 					
 					//将数据写入文件中
-					DataOutputStream fileOut = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f)));
+//					DataOutputStream fileOut = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f, true)));
+					RandomAccessFile raf = new RandomAccessFile(f, "rw");
+					
 					byte[] bytes = new byte[buf.length - endIndex -1];
 					for(int i = 0; i < bytes.length; i++) {
 						bytes[i] = buf[i + 1 + endIndex];
 					}
-//					fileOut.write(bytes, json.getInt(Constant.DATA_OFFSET), json.getInt(Constant.DATA_LENGTH));
-					fileOut.write(bytes);
-					fileOut.close();
+//					fileOut.write(bytes);
+//					fileOut.close();
+					raf.seek(json.getInt(Constant.DATA_OFFSET));
+					raf.write(bytes);
+					raf.close();
 					
 //					int total = dataMapTotal.get(contentHash);
 //					int current = dataMapCurrent.get(contentHash);
@@ -206,19 +216,10 @@ public class UDPThread implements Runnable {
 //						dataMapTotal.remove(contentHash);
 //						VideoServer.over = true;
 //					}
-					
-					new Thread(new Runnable() {
-						
-						@Override
-						public void run() {
-							try {
-								Thread.sleep(30000);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-							VideoServer.over = true;
-						}
-					});
+//					Log.d("fileLength", f.length()+"");
+//					if(f.length() > 467556) {
+//						VideoServer.over = true;
+//					}
 					
 					//更新本地数据库中的记录
 //					DB.updatePiece(contentHash, (Integer)json.get(Constant.DATA_OFFSET), (Integer)json.get(Constant.DATA_LENGTH));

@@ -110,7 +110,7 @@ public class UDP {
 			json.put(Constant.CONTENT_HASH, contentHash);
 			json.put(Constant.DATA_OFFSET, dataOffset);
 			json.put(Constant.DATA_LENGTH, dataLength);
-			Log.d("video", json.toString());
+			Log.d("video", dataOffset + ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" + dataLength);
 			byte[] header = json.toString().getBytes();
 			byte[] data = new byte[header.length + bytes.length];
 			System.arraycopy(header,0,data,0,header.length);

@@ -38,10 +38,10 @@ public class MainActivity extends Activity {
 		mVideoServer = new VideoServer();
 		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"	+ Constant.LOCAL_SERVER_PORT);
 		
-		File file = new File(Constant.SAVE_PATH + "40dc2249423e63484e291ad0eeef2c0ba870b027");
-		if(file.exists()) {
-			file.delete();
-		}
+//		File file = new File(Constant.SAVE_PATH + "40dc2249423e63484e291ad0eeef2c0ba870b027");
+//		if(file.exists()) {
+//			file.delete();
+//		}
 		
 		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
 		String peerID = getPeerId();

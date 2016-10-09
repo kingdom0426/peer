@@ -12,7 +12,7 @@ import fi.iki.elonen.NanoHTTPD.Response.Status;
 
 public class VideoServer extends NanoHTTPD {
 	
-	public static boolean over = false;
+	public static boolean over = true;
     
     public static final String TAG = VideoServer.class.getSimpleName();
     
