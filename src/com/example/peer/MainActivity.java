@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
 		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
 		String peerID = getPeerId();
 		if(peerID == null || "".equals(peerID)) {
-			writePeerId("qinyifangpeer");
+			writePeerId("duxinpeer");
 		}
 		Constant.PEER_ID_VALUE = getPeerId();
 		

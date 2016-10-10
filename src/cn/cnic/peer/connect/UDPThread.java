@@ -62,19 +62,24 @@ public class UDPThread implements Runnable {
 			new Thread(new HeartThread(ds, Constant.PEER_ID_VALUE)).start();
 
 			// 循环接收
-			byte[] buf = new byte[2048];
-			DatagramPacket rp = new DatagramPacket(buf, 2048);
 			boolean isEnd = false;
 			while (!isEnd) {
+				byte[] buf = new byte[2048];
+				DatagramPacket rp = new DatagramPacket(buf, 2048);
 				ds.receive(rp);
 				// 取出信息
 				String content = "";
 				int endIndex = 0;
 				for(int i = 0; i < buf.length; i++) {
-					
 					if((char)buf[i] == '}') {
-						if(i > endIndex) {
+						if(buf[i+1] == 0) {
 							endIndex = i;
+							break;
+						}
+						
+						if((char)buf[i+1] == '$' && (char)buf[i+2] == '$') {
+							endIndex = i;
+							break;
 						}
 					}
 				}
@@ -141,7 +146,7 @@ public class UDPThread implements Runnable {
 					int total = mapTotal.get(contentHash);
 					int current = mapCurrent.get(contentHash);
 					//全部返回
-					if(total == current) {
+//					if(total == current) {
 						//文件总大小（单位：b）
 						int fileSize = 467556;
 						//进行视频拼接，得到需要请求的视频片段
@@ -158,9 +163,9 @@ public class UDPThread implements Runnable {
 						}
 						
 						//请求发送完毕后，将此任务从两个map中移走
-						mapTotal.remove(contentHash);
-						mapCurrent.remove(contentHash);
-					}
+//						mapTotal.remove(contentHash);
+//						mapCurrent.remove(contentHash);
+//					}
 				} 
 				
 				//收到报文请求后，向请求方发送报文数据
@@ -168,7 +173,7 @@ public class UDPThread implements Runnable {
 					String contentHash = json.getString(Constant.CONTENT_HASH);
 					int offset = json.getInt(Constant.REQUEST_OFFSET);
 					int length = json.getInt(Constant.REQUEST_LENGTH);
-					DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream(Constant.SAVE_PATH + contentHash)));
+					DataInputStream fis = new DataInputStream(new BufferedInputStream(new FileInputStream(Environment.getExternalStorageDirectory()+"/" + contentHash)));
 					fis.skip(offset);
 					byte[] data = new byte[1024];
 					int i = 0;
@@ -181,6 +186,7 @@ public class UDPThread implements Runnable {
 							UDP.submitP2PPieceResponse(ds, contentHash, offset + i, length - i, json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT), data);
 						}
 						i += data.length;
+						Thread.sleep(20);
 					}
 					fis.close();
 				}
@@ -199,9 +205,11 @@ public class UDPThread implements Runnable {
 //					DataOutputStream fileOut = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f, true)));
 					RandomAccessFile raf = new RandomAccessFile(f, "rw");
 					
-					byte[] bytes = new byte[buf.length - endIndex -1];
-					for(int i = 0; i < bytes.length; i++) {
-						bytes[i] = buf[i + 1 + endIndex];
+//					byte[] bytes = new byte[buf.length - endIndex - json.getInt(Constant.DATA_LENGTH) -1];
+					byte[] bytes = new byte[json.getInt(Constant.DATA_LENGTH)];
+					int n = 0;
+					for(int i = endIndex + 3; i < endIndex + 3 + bytes.length; i++) {
+						bytes[n++] = buf[i];
 					}
 //					fileOut.write(bytes);
 //					fileOut.close();
@@ -216,10 +224,7 @@ public class UDPThread implements Runnable {
 //						dataMapTotal.remove(contentHash);
 //						VideoServer.over = true;
 //					}
-//					Log.d("fileLength", f.length()+"");
-//					if(f.length() > 467556) {
-//						VideoServer.over = true;
-//					}
+					Log.d("fileLength", f.length()+"");
 					
 					//更新本地数据库中的记录
 //					DB.updatePiece(contentHash, (Integer)json.get(Constant.DATA_OFFSET), (Integer)json.get(Constant.DATA_LENGTH));

@@ -1,7 +1,11 @@
 package com.example.peer;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+
+import android.os.Environment;
+import android.util.Log;
 
 import cn.cnic.peer.connect.TCPThread;
 import cn.cnic.peer.cons.Constant;
@@ -12,8 +16,6 @@ import fi.iki.elonen.NanoHTTPD.Response.Status;
 
 public class VideoServer extends NanoHTTPD {
 	
-	public static boolean over = true;
-    
     public static final String TAG = VideoServer.class.getSimpleName();
     
     public VideoServer() {
@@ -27,7 +29,6 @@ public class VideoServer extends NanoHTTPD {
     	
     	//如果本地不存在该文件，或文件大小不完整，就去tracker中请求
 //    	if(!DB.isLocalExist(tsId, fileSize)) {
-		TCPThread.sessions.add(session);
 //    	}
 //    	MainActivity.map.put(session.getUri(), false);
 //    	while(!MainActivity.map.get(session.getUri())) {
@@ -41,23 +42,24 @@ public class VideoServer extends NanoHTTPD {
 //    	Download.downloadAll("http://111.39.226.112:8114/VODS/1092287_142222153_0002222153_0000000000_0001143039.ts?Fsv_Sd=10&Fsv_filetype=2&Provider_id=gslb/program&Pcontent_id=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&FvOPid=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&Fsv_MBt=0&FvHlsIdx=3&UserID=&Fsv_otype=0&FvSeid=54e0e9c78502314b", 
 //				"40dc2249423e63484e291ad0eeef2c0ba870b027", Constant.SAVE_PATH);
 //    	over = true;
-		while(!over) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		over = false;
-    	
-        return responseVideoStream("40dc2249423e63484e291ad0eeef2c0ba870b027");
+    	String contentHash = "40dc2249423e63484e291ad0eeef2c0ba870b027";
+    	File file = new File(Environment.getExternalStorageDirectory().getPath()+"/" + contentHash);
+    	if(!file.exists()) {
+    		TCPThread.sessions.add(session);
+    		try {
+    			Thread.sleep(30000);
+    		} catch (InterruptedException e) {
+    			e.printStackTrace();
+    		}
+    	}
+        return responseVideoStream(contentHash);
     }
     
     public Response responseVideoStream(String contentHash) {
         FileInputStream fis = null;
 		try {
-			fis = new FileInputStream(Constant.SAVE_PATH + contentHash);
+			fis = new FileInputStream(Environment.getExternalStorageDirectory().getPath()+"/" + contentHash);
+			Log.d("filePath", Environment.getExternalStorageDirectory().getPath());
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
