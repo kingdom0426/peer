@@ -42,7 +42,13 @@ public class VideoServer extends NanoHTTPD {
 //    	Download.downloadAll("http://111.39.226.112:8114/VODS/1092287_142222153_0002222153_0000000000_0001143039.ts?Fsv_Sd=10&Fsv_filetype=2&Provider_id=gslb/program&Pcontent_id=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&FvOPid=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&Fsv_MBt=0&FvHlsIdx=3&UserID=&Fsv_otype=0&FvSeid=54e0e9c78502314b", 
 //				"40dc2249423e63484e291ad0eeef2c0ba870b027", Constant.SAVE_PATH);
 //    	over = true;
-    	String contentHash = "40dc2249423e63484e291ad0eeef2c0ba870b027";
+    	String url = session.getParms().get("srcURL");
+    	String contentHash = "";
+    	if(url.equals("http://192.168.1.130/fileSequence0.ts")) {
+    		contentHash = "40dc2249423e63484e291ad0eeef2c0ba870b027";
+    	} else {
+    		contentHash = "290c6e19fbe81c535d58c7ea7283f95c2339b70a";
+    	}
     	File file = new File(Environment.getExternalStorageDirectory().getPath()+"/" + contentHash);
     	if(!file.exists()) {
     		TCPThread.sessions.add(session);
@@ -52,6 +58,7 @@ public class VideoServer extends NanoHTTPD {
     			e.printStackTrace();
     		}
     	}
+//    	return null;
         return responseVideoStream(contentHash);
     }
     

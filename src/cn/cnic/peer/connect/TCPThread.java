@@ -5,14 +5,13 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.example.peer.MainActivity;
 
 import android.os.Environment;
 import android.util.Log;
@@ -22,6 +21,7 @@ import cn.cnic.peer.download.Download;
 import cn.cnic.peer.entity.Http;
 import cn.cnic.peer.entity.Peer;
 import cn.cnic.peer.entity.Segment;
+import cn.cnic.peer.sha1.SHA1;
 import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 
 public class TCPThread implements Runnable {
@@ -86,7 +86,7 @@ public class TCPThread implements Runnable {
 				if(sessions.size() > 0) {
 					for(int i = 0; i < sessions.size(); i++) {
 						//发送URL请求
-						queryPeerList(Constant.PEER_ID_VALUE, sessions.get(i).getUri(), writer);
+						queryPeerList(Constant.PEER_ID_VALUE, sessions.get(i).getParms().get("srcURL"), writer);
 						
 						//从列表中清除此记录
 						sessions.remove(i);
@@ -105,14 +105,24 @@ public class TCPThread implements Runnable {
 	 * @param peerID Peer的特征串，每个Peer节点唯一，可以在初始随机生成，之后一直沿用（一般用SHA1哈希算法获取20字节值，即40字节可打印字符串）
 	 * @param URLHash Peer所请求的下载任务URL哈希值
 	 */
-	private void queryPeerList(String peerID, String URLHash, BufferedWriter writer) {
+	private void queryPeerList(String peerID, String url, BufferedWriter writer) {
+		String urlHash = null;
 		try {
-			JSONObject json = new JSONObject();
-			json.put(Constant.PEER_ID, peerID);
-			json.put(Constant.URL_HASH, "08f12c16dd8742974f539ad374e108f7c5cb914e");
-			send(json, writer);
-		} catch (JSONException e) {
-			e.printStackTrace();
+			urlHash = SHA1.sha1(url);
+		} catch (NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+		}
+		if ("08f12c16dd8742974f539ad374e108f7c5cb914e".equals(urlHash)) {
+			try {
+				JSONObject json = new JSONObject();
+				json.put(Constant.PEER_ID, peerID);
+				json.put(Constant.URL_HASH, urlHash);
+				send(json, writer);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		} else {
+			Download.downloadAll(url, "290c6e19fbe81c535d58c7ea7283f95c2339b70a", Environment.getExternalStorageDirectory().getPath() + "/");
 		}
 	}
 	
