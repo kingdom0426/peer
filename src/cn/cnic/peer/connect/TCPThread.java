@@ -22,18 +22,12 @@ import cn.cnic.peer.entity.Http;
 import cn.cnic.peer.entity.Peer;
 import cn.cnic.peer.entity.Segment;
 import cn.cnic.peer.sha1.SHA1;
-import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import cn.cnic.peer.util.Global;
 
 public class TCPThread implements Runnable {
 	
-	//用于存储播放器请求
-	public static List<IHTTPSession> sessions = new ArrayList<IHTTPSession>();
-
 	public void run() {
 		Log.d("peer", "已启动TCP线程，用于与TRACKER沟通");
-		
-//		Download.downloadAll("http://111.39.226.112:8114/VODS/1092287_142222153_0002222153_0056541188_0057413695.ts?Fsv_Sd=10&Fsv_filetype=2&Provider_id=gslb/program&Pcontent_id=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&FvOPid=_ahbyfh-1_/FDN/FDNB2132171/prime.m3u8&Fsv_MBt=0&FvHlsIdx=3&UserID=&Fsv_otype=0&FvSeid=54e0e9c78502314b", 
-//				"40dc2249423e63484e291ad0eeef2c0ba870b027", Constant.SAVE_PATH);
 		
 		try {
 
@@ -70,9 +64,9 @@ public class TCPThread implements Runnable {
 								seg.setContentHash(json.getString(Constant.CONTENT_HASH));
 								seg.setUrlHash(json.getString(Constant.URL_HASH));
 								seg.setPeerList(peerList);
-								UDPThread.segments.add(seg);
-								UDPThread.mapTotal.put(json.getString(Constant.CONTENT_HASH),peerList.size());
-								UDPThread.mapCurrent.put(json.getString(Constant.CONTENT_HASH),0);
+								Global.UDP_SEGMENTS.add(seg);
+								Global.UDP_QUERY_TOTAL.put(json.getString(Constant.CONTENT_HASH),peerList.size());
+								Global.UDP_QUERY_CUR.put(json.getString(Constant.CONTENT_HASH),0);
 							}
 
 							//如果局域网中不存在，就从cdn中下载
@@ -83,16 +77,15 @@ public class TCPThread implements Runnable {
 						}
 					}
 				}
-				if(sessions.size() > 0) {
-					for(int i = 0; i < sessions.size(); i++) {
+				if(Global.TCP_REQUESTS.size() > 0) {
+					for(int i = 0; i < Global.TCP_REQUESTS.size(); i++) {
 						//发送URL请求
-						queryPeerList(Constant.PEER_ID_VALUE, sessions.get(i).getParms().get("srcURL"), writer);
+						queryPeerList(Constant.PEER_ID_VALUE, Global.TCP_REQUESTS.get(i).getParms().get("srcURL"), writer);
 						
 						//从列表中清除此记录
-						sessions.remove(i);
+						Global.TCP_REQUESTS.remove(i);
 					}
 				}
-//				Thread.sleep(Constant.RECEIVE_INTERVAL);
 			}
 			tcp.close();
 		} catch (Exception e) {

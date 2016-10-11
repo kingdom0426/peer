@@ -1,20 +1,15 @@
 package cn.cnic.peer.connect;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,7 +17,6 @@ import org.json.JSONObject;
 import com.example.peer.VideoServer;
 
 import android.os.Environment;
-import android.provider.MediaStore.Video;
 import android.util.Log;
 
 import cn.cnic.peer.cons.Constant;
@@ -31,27 +25,9 @@ import cn.cnic.peer.entity.Peer;
 import cn.cnic.peer.entity.Piece;
 import cn.cnic.peer.entity.Segment;
 import cn.cnic.peer.merge.Merge;
+import cn.cnic.peer.util.Global;
 
 public class UDPThread implements Runnable {
-	
-	public static List<Segment> segments = new ArrayList<Segment>();
-	
-	/**
-	 * 下面这两个map用来判断对端peerlist是不是都已返回结果
-	 * 如果已都返回（total == current），就可进行视频拼接，然后向各peer发送片段请求，并在map中删除此contentHash
-	 */
-	public static Map<String, Integer> mapTotal = new HashMap<String, Integer>();
-	public static Map<String, Integer> mapCurrent = new HashMap<String, Integer>();
-	
-	//这个map用来记录contentHash的所有片段
-	private Map<String, List<Piece>> mapPiece = new HashMap<String, List<Piece>>();
-	
-	/**
-	 * 下面这两个map用来判断报文请求是否都已全部返回
-	 * 如果都已经返回，就可以向用户输出视频
-	 */
-	public static Map<String, Integer> dataMapTotal = new HashMap<String, Integer>();
-	public static Map<String, Integer> dataMapCurrent = new HashMap<String, Integer>();
 	
 	public void run() {
 		Log.d("peer", "已启动UDP线程，用于PEER之间进行通信");
@@ -126,11 +102,10 @@ public class UDPThread implements Runnable {
 				else if(action.equals(Constant.ACTION_P2P_HANDSHAKE_RESPONSE)) {
 					UploadInfoThread.NATSuccessCount ++;
 					String contentHash = json.getString(Constant.CONTENT_HASH);
-//					mapCurrent.put(contentHash, mapCurrent.get(contentHash) + 1);
-					mapCurrent.put(contentHash, mapCurrent.get(contentHash) + 1);
+					Global.UDP_QUERY_CUR.put(contentHash, Global.UDP_QUERY_CUR.get(contentHash) + 1);
 					JSONArray pieces = new JSONArray(json.get(Constant.PIECES).toString());
-					if(!mapPiece.containsKey(contentHash)) {
-						mapPiece.put(contentHash, new ArrayList<Piece>());
+					if(!Global.UDP_DATA_RECEIVE.containsKey(contentHash)) {
+						Global.UDP_DATA_RECEIVE.put(contentHash, new ArrayList<Piece>());
 					}
 					for(int i = 0; i < pieces.length(); i++) {
 						Piece p = new Piece();
@@ -142,31 +117,31 @@ public class UDPThread implements Runnable {
 						peer.setUdpIp(json.getString(Constant.PUBLIC_UDP_IP));
 						peer.setUdpPort(json.getInt(Constant.PUBLIC_UDP_PORT));
 						p.setPeer(peer);
-						mapPiece.get(contentHash).add(p);
+						Global.UDP_DATA_RECEIVE.get(contentHash).add(p);
 					}
-					int total = mapTotal.get(contentHash);
-					int current = mapCurrent.get(contentHash);
+					int total = Global.UDP_QUERY_TOTAL.get(contentHash);
+					int current = Global.UDP_QUERY_CUR.get(contentHash);
 					//全部返回
-//					if(total == current) {
+					if(total == current) {
 						//文件总大小（单位：b）
 						int fileSize = 467556;
 						//进行视频拼接，得到需要请求的视频片段
-						List<Piece> resultPieces = generateFinalPieces(mapPiece.get(contentHash), fileSize, ds, contentHash);
+						List<Piece> resultPieces = generateFinalPieces(Global.UDP_DATA_RECEIVE.get(contentHash), fileSize, ds, contentHash);
 						
 						//拼接完成后将记录从mapPiece中删除
-						mapPiece.remove(contentHash);
+						Global.UDP_DATA_RECEIVE.remove(contentHash);
 						
-						dataMapTotal.put(contentHash, resultPieces.size());
-						dataMapCurrent.put(contentHash, 0);
+						Global.UDP_DATA_TOTAL.put(contentHash, resultPieces.size());
+						Global.UDP_DATA_CUR.put(contentHash, 0);
 						//依次发送数据请求
 						for(Piece p : resultPieces) {
 							UDP.submitP2PPieceRequest(ds, contentHash, p.getOffset(), p.getLength(), json.getString(Constant.PUBLIC_UDP_IP), json.getInt(Constant.PUBLIC_UDP_PORT));
 						}
 						
 						//请求发送完毕后，将此任务从两个map中移走
-//						mapTotal.remove(contentHash);
-//						mapCurrent.remove(contentHash);
-//					}
+						Global.UDP_QUERY_TOTAL.remove(contentHash);
+						Global.UDP_QUERY_CUR.remove(contentHash);
+					}
 				} 
 				
 				//收到报文请求后，向请求方发送报文数据
@@ -195,7 +170,6 @@ public class UDPThread implements Runnable {
 				//接收到对端peer传来的数据响应后
 				else if(action.equals(Constant.ACTION_P2P_PIECE_RESPONSE)) {
 					String contentHash = json.getString(Constant.CONTENT_HASH);
-//					dataMapCurrent.put(contentHash, dataMapCurrent.get(contentHash) + 1);
 					//以contentHash作为文件名，如果不存在，就创建
 					File f = new File(Environment.getExternalStorageDirectory() + "/" + contentHash);
 					if(!f.exists()) {
@@ -218,13 +192,14 @@ public class UDPThread implements Runnable {
 					raf.write(bytes);
 					raf.close();
 					
-//					int total = dataMapTotal.get(contentHash);
-//					int current = dataMapCurrent.get(contentHash);
-//					if(total == current) {
-//						dataMapCurrent.remove(contentHash);
-//						dataMapTotal.remove(contentHash);
-//						VideoServer.over = true;
-//					}
+					Global.UDP_DATA_CUR.put(contentHash, Global.UDP_DATA_CUR.get(contentHash) + 1);
+					int total = Global.UDP_DATA_TOTAL.get(contentHash);
+					int current = Global.UDP_DATA_CUR.get(contentHash);
+					if(total == current) {
+						Global.UDP_DATA_CUR.remove(contentHash);
+						Global.UDP_DATA_TOTAL.remove(contentHash);
+						VideoServer.over = true;
+					}
 					Log.d("fileLength", f.length()+"");
 					
 					//更新本地数据库中的记录
@@ -238,9 +213,9 @@ public class UDPThread implements Runnable {
 				
 				
 				//如果有需要获取的数据，就向peer进行请求
-				if(segments.size() > 0) {
-					for(int i = 0; i < segments.size(); i++) {
-						Segment s = segments.get(i);
+				if(Global.UDP_SEGMENTS.size() > 0) {
+					for(int i = 0; i < Global.UDP_SEGMENTS.size(); i++) {
+						Segment s = Global.UDP_SEGMENTS.get(i);
 						
 						//依次遍历tracker返回的每一个peer
 						for(int j = 0; j < s.getPeerList().size(); j ++) {
@@ -250,10 +225,9 @@ public class UDPThread implements Runnable {
 							//新建一个线程，在线程中延迟两秒，再去发送握手请求（延迟两秒的目的是让对端的peer节点有时间去进行打洞）
 							new Thread(new HandShakeThread(ds, Constant.PEER_ID_VALUE, p.getUdpIp(), p.getUdpPort(), s.getContentHash())).start();
 						}
-						segments.remove(i);
+						Global.UDP_SEGMENTS.remove(i);
 					}
 				}
-//				Thread.sleep(Constant.RECEIVE_INTERVAL);
 			}
 			ds.close();
 		} catch (Exception e) {
