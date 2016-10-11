@@ -75,6 +75,9 @@ public class Constant {
 	
 	//本地文件的存储路径
 	public static final String SAVE_PATH = Environment.getDataDirectory().getPath()+"/data/com.example.peer/";
+	
+	//m3u8文件存储路径
+	public static final String M3U8_PATH = Environment.getExternalStorageDirectory().getPath()+"/m3u8/";
 
 	public static String PEER_ID_VALUE = "qinyifangpeer";
 //	public static String PEER_ID_VALUE = "duxinpeer";

@@ -21,13 +21,16 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
 	private TextView mTipsTextView;
 	private VideoServer mVideoServer;
+	private long exitTime = 0;
 	public static Map<String, Boolean> map = new HashMap<String, Boolean>();
 
 	@Override
@@ -43,26 +46,26 @@ public class MainActivity extends Activity {
 //			file.delete();
 //		}
 		
-		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
-		String peerID = getPeerId();
-		if(peerID == null || "".equals(peerID)) {
-			writePeerId("duxinpeer");
-		}
-		Constant.PEER_ID_VALUE = getPeerId();
-		
-		
-		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
-		
-		//启动TCP连接tracker，用于与tracker通信
-		TCPThread tcp = new TCPThread();
-		Thread t1 = new Thread(tcp);
-		t1.start();
-		
-		//启动UDP线程，用于peer间数据通信
-		UDPThread udp = new UDPThread();
-		Thread t3 = new Thread(udp);
-		t3.start();
-		
+//		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
+//		String peerID = getPeerId();
+//		if(peerID == null || "".equals(peerID)) {
+//			writePeerId("qinyifangpeer");
+//		}
+//		Constant.PEER_ID_VALUE = getPeerId();
+//		
+//		
+//		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
+//		
+//		//启动TCP连接tracker，用于与tracker通信
+//		TCPThread tcp = new TCPThread();
+//		Thread t1 = new Thread(tcp);
+//		t1.start();
+//		
+//		//启动UDP线程，用于peer间数据通信
+//		UDPThread udp = new UDPThread();
+//		Thread t3 = new Thread(udp);
+//		t3.start();
+//		
 		try {
 			mVideoServer.start();
 		} catch (IOException e) {
@@ -83,6 +86,21 @@ public class MainActivity extends Activity {
         mVideoServer.stop();
         super.onDestroy();
     }
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	    if(keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN){   
+	        if((System.currentTimeMillis()-exitTime) > 2000){  
+	            Toast.makeText(getApplicationContext(), "再按一次退出程序", Toast.LENGTH_SHORT).show();                                
+	            exitTime = System.currentTimeMillis();   
+	        } else {
+	            finish();
+	            System.exit(0);
+	        }
+	        return true;   
+	    }
+	    return super.onKeyDown(keyCode, event);
+	}
 
     public static String getLocalIpStr(Context context) {        
         WifiManager wifiManager=(WifiManager)context.getSystemService(Context.WIFI_SERVICE);

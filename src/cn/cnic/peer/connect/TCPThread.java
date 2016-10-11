@@ -40,7 +40,7 @@ public class TCPThread implements Runnable {
 			Socket tcp = new Socket(Constant.TRACKER_IP, Constant.TRACKER_TCP_PORT);
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(tcp.getOutputStream()));
 			//启动上传信息线程，周期性上传数据
-//			new Thread(new UploadInfoThread(Constant.PEER_ID_VALUE)).start();
+			new Thread(new UploadInfoThread(Constant.PEER_ID_VALUE, writer)).start();
 			
 			//不断获取tracker发来的数据
 			boolean isEnd = false;
@@ -117,7 +117,7 @@ public class TCPThread implements Runnable {
 				JSONObject json = new JSONObject();
 				json.put(Constant.PEER_ID, peerID);
 				json.put(Constant.URL_HASH, urlHash);
-				send(json, writer);
+				send(json, "/get_peerlist", writer);
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -126,9 +126,9 @@ public class TCPThread implements Runnable {
 		}
 	}
 	
-	private void send(JSONObject json, BufferedWriter writer) {
+	public static void send(JSONObject json, String url, BufferedWriter writer) {
 		StringBuffer sb = new StringBuffer();
-		sb.append("POST /get_peerlist HTTP/1.1\r\n");
+		sb.append("POST " + url + " HTTP/1.1\r\n");
 		sb.append("Host: " + Constant.LOCAL_SERVER_IP + "\r\n");
 		sb.append("Content-Length: "+json.toString().length()+"\r\n");
 		sb.append("Connection: Keep-Alive\r\n\r\n");
