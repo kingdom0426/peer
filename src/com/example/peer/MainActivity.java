@@ -13,8 +13,8 @@ import java.util.Map;
 
 import cn.cnic.peer.connect.TCPThread;
 import cn.cnic.peer.connect.UDPThread;
+import cn.cnic.peer.connect.UploadInfoThread;
 import cn.cnic.peer.cons.Constant;
-import cn.cnic.peer.download.Download;
 
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -41,31 +41,26 @@ public class MainActivity extends Activity {
 		mVideoServer = new VideoServer();
 		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"	+ Constant.LOCAL_SERVER_PORT);
 		
-//		File file = new File(Constant.SAVE_PATH + "40dc2249423e63484e291ad0eeef2c0ba870b027");
-//		if(file.exists()) {
-//			file.delete();
-//		}
+		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
+		String peerID = getPeerId();
+		if(peerID == null || "".equals(peerID)) {
+			writePeerId("qinyifangpeer");
+		}
+		Constant.PEER_ID_VALUE = getPeerId();
 		
-//		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
-//		String peerID = getPeerId();
-//		if(peerID == null || "".equals(peerID)) {
-//			writePeerId("qinyifangpeer");
-//		}
-//		Constant.PEER_ID_VALUE = getPeerId();
-//		
-//		
-//		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
-//		
-//		//启动TCP连接tracker，用于与tracker通信
-//		TCPThread tcp = new TCPThread();
-//		Thread t1 = new Thread(tcp);
-//		t1.start();
-//		
-//		//启动UDP线程，用于peer间数据通信
-//		UDPThread udp = new UDPThread();
-//		Thread t3 = new Thread(udp);
-//		t3.start();
-//		
+		
+		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
+		//启动TCP连接tracker，用于与tracker通信
+		TCPThread tcp = new TCPThread();
+		Thread t1 = new Thread(tcp);
+		t1.start();
+		
+		//启动UDP线程，用于peer间数据通信
+		UDPThread udp = new UDPThread();
+		Thread t3 = new Thread(udp);
+		t3.start();
+		
+		new Thread(new UploadInfoThread(Constant.PEER_ID_VALUE, null)).start();
 		try {
 			mVideoServer.start();
 		} catch (IOException e) {
