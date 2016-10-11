@@ -36,6 +36,7 @@ public class HandShakeThread implements Runnable {
 			String data = json.toString();
 			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
 			ds.send(p);
+			UploadInfoThread.NATAllCount ++;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

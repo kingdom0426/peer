@@ -1,33 +1,45 @@
 package cn.cnic.peer.connect;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.example.peer.MainActivity;
-
 import android.os.Environment;
 import android.os.StatFs;
-import android.text.format.Formatter;
-
 import cn.cnic.peer.cons.Constant;
+import cn.cnic.peer.entity.Statis;
 
 public class UploadInfoThread implements Runnable {
 	private String peerID;
 	private BufferedWriter writer;
+	
+	public static List<Statis>  peerConnectList = null;
+	public static int NATAllCount = 0;
+	public static int NATSuccessCount = 0;
+
+	public static List<Statis>  uploadVolumeList = null;
+	public static List<Statis>  uploadVolumetList = null;
+	
+	public static byte uploadPeakRate = 0;//每个ts上传的容量/时间
+	public static byte downloadPeakRate = 0;//每个ts下载的容量/时间
+	
+	private void initParma(){
+		peerConnectList = new ArrayList<Statis>();
+		NATAllCount = 0;
+		NATSuccessCount = 0;
+
+		uploadVolumeList = new ArrayList<Statis>();
+		uploadVolumetList = new ArrayList<Statis>();
+		
+		uploadPeakRate = 0;
+		downloadPeakRate = 0;
+	}
 	
 	public UploadInfoThread(String peerID, BufferedWriter writer) {
 		this.peerID = peerID;
@@ -37,40 +49,18 @@ public class UploadInfoThread implements Runnable {
 	public void run() {
 		while(true) {
 			doSubmitWork();
-			try {
-				Thread.sleep(Constant.UPLOAD_INFO_INTERVAL);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	
 	//周期性地执行上传信息任务
 	public void doSubmitWork() {
-		while(true) {
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			submitCPUUseRate(getSDTotalSize(), getSDAvailableSize());//Peer本地存储总量、可用存储总量
-			submitCPUUseInfo(getProcessCpuRate(), (int)((float)getPeerRomSize()/getRomTotalSize()*100));//Peer节点CPU、内存占用率
 			try {
+				//submitNATSuccessRate(infoHash,NATSuccessRate,timeStart,timeEnd)
+				initParma();
 				Thread.sleep(Constant.UPLOAD_INFO_INTERVAL);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
 	}
 	
 
@@ -85,6 +75,7 @@ public class UploadInfoThread implements Runnable {
 			json.put("peerCnt", peerCnt);
 			json.put("timeStart", timeStart);
 			json.put("timeEnd", timeEnd);
+			
 			TCPThread.send(json, "/api/peer/taskpeercnt", writer);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -106,6 +97,7 @@ public class UploadInfoThread implements Runnable {
 			json.put("NATSuccessRate", NATSuccessRate);
 			json.put("timeStart", timeStart);
 			json.put("timeEnd", timeEnd);
+			json.put("NATSuccessRate", "");
 			TCPThread.send(json, "/api/peer/natsuccrate", writer);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -195,7 +187,7 @@ public class UploadInfoThread implements Runnable {
 	 * @param dTotal
 	 * @param dUsage
 	 */
-	private void submitCPUUseRate(long dTotal, long dUsage) {
+	private void submitCPUUseRate(int dTotal, int dUsage) {
 		try {
 			JSONObject json = new JSONObject();
 			json.put("type", "Peer");
@@ -214,7 +206,7 @@ public class UploadInfoThread implements Runnable {
 	 * @param cpu
 	 * @param mem
 	 */
-	private void submitCPUUseInfo(float cpu, int mem) {
+	private void submitCPUUseInfo(int cpu, int mem) {
 		try {
 			JSONObject json = new JSONObject();
 			json.put("type", "Peer");
@@ -275,73 +267,6 @@ public class UploadInfoThread implements Runnable {
 	  long blockSize = stat.getBlockSize(); 
 	  long availableBlocks = stat.getAvailableBlocks(); 
 	  return blockSize * availableBlocks; 
-	}
-	
-	/**
-	 * 获取节点内存占用大小
-	 * @return
-	 */
-	private long getPeerRomSize() {
-		return Runtime.getRuntime().totalMemory();
-	}
-	
-	public static float getProcessCpuRate()
-    {
-        
-        float totalCpuTime1 = getTotalCpuTime();
-        float processCpuTime1 = getAppCpuTime();
-        try
-        {
-            Thread.sleep(1000);
-            
-        }
-        catch (Exception e)
-        {
-        }
-        
-        float totalCpuTime2 = getTotalCpuTime();
-        float processCpuTime2 = getAppCpuTime();
-        
-        float cpuRate = 100 * (processCpuTime2 - processCpuTime1)
-                / (totalCpuTime2 - totalCpuTime1);
-        
-        return cpuRate;
-    }
-	
-	private static long getTotalCpuTime() { // 获取系统总CPU使用时间
-	    String[] cpuInfos = null;
-	    try {
-	        BufferedReader reader = new BufferedReader(new InputStreamReader(
-	                new FileInputStream("/proc/stat")), 1000);
-	        String load = reader.readLine();
-	        reader.close();
-	        cpuInfos = load.split(" ");
-	    } catch (IOException ex) {
-	        ex.printStackTrace();
-	    }
-	    long totalCpu = Long.parseLong(cpuInfos[2])
-	            + Long.parseLong(cpuInfos[3]) + Long.parseLong(cpuInfos[4])
-	            + Long.parseLong(cpuInfos[6]) + Long.parseLong(cpuInfos[5])
-	            + Long.parseLong(cpuInfos[7]) + Long.parseLong(cpuInfos[8]);
-	    return totalCpu;
-	}
-	 
-	private static long getAppCpuTime() { // 获取应用占用的CPU时间
-	    String[] cpuInfos = null;
-	    try {
-	        int pid = android.os.Process.myPid();
-	        BufferedReader reader = new BufferedReader(new InputStreamReader(
-	                new FileInputStream("/proc/" + pid + "/stat")), 1000);
-	        String load = reader.readLine();
-	        reader.close();
-	        cpuInfos = load.split(" ");
-	    } catch (IOException ex) {
-	        ex.printStackTrace();
-	    }
-	    long appCpuTime = Long.parseLong(cpuInfos[13])
-	            + Long.parseLong(cpuInfos[14]) + Long.parseLong(cpuInfos[15])
-	            + Long.parseLong(cpuInfos[16]);
-	    return appCpuTime;
 	}
 	
 	private String getCurrentTime() {
