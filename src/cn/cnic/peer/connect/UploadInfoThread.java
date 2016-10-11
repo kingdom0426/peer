@@ -3,27 +3,43 @@ package cn.cnic.peer.connect;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.example.peer.MainActivity;
-
 import android.os.Environment;
 import android.os.StatFs;
-import android.text.format.Formatter;
-
 import cn.cnic.peer.cons.Constant;
+import cn.cnic.peer.entity.Statis;
 
 public class UploadInfoThread implements Runnable {
 	private String peerID;
 	private BufferedWriter writer;
+	
+	public static List<Statis>  peerConnectList = null;
+	public static int NATAllCount = 0;
+	public static int NATSuccessCount = 0;
+
+	public static List<Statis>  uploadVolumeList = null;
+	public static List<Statis>  uploadVolumetList = null;
+	
+	public static byte uploadPeakRate = 0;//每个ts上传的容量/时间
+	public static byte downloadPeakRate = 0;//每个ts下载的容量/时间
+	
+	private void initParma(){
+		peerConnectList = new ArrayList<Statis>();
+		NATAllCount = 0;
+		NATSuccessCount = 0;
+
+		uploadVolumeList = new ArrayList<Statis>();
+		uploadVolumetList = new ArrayList<Statis>();
+		
+		uploadPeakRate = 0;
+		downloadPeakRate = 0;
+	}
 	
 	public UploadInfoThread(String peerID, BufferedWriter writer) {
 		this.peerID = peerID;
@@ -33,38 +49,18 @@ public class UploadInfoThread implements Runnable {
 	public void run() {
 		while(true) {
 			doSubmitWork();
-			try {
-				Thread.sleep(Constant.UPLOAD_INFO_INTERVAL);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	
 	//周期性地执行上传信息任务
 	public void doSubmitWork() {
-		while(true) {
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
-			//
 			try {
+				//submitNATSuccessRate(infoHash,NATSuccessRate,timeStart,timeEnd)
+				initParma();
 				Thread.sleep(Constant.UPLOAD_INFO_INTERVAL);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
 	}
 	
 
@@ -79,6 +75,7 @@ public class UploadInfoThread implements Runnable {
 			json.put("peerCnt", peerCnt);
 			json.put("timeStart", timeStart);
 			json.put("timeEnd", timeEnd);
+			
 			TCPThread.send(json, "/api/peer/taskpeercnt", writer);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -100,6 +97,7 @@ public class UploadInfoThread implements Runnable {
 			json.put("NATSuccessRate", NATSuccessRate);
 			json.put("timeStart", timeStart);
 			json.put("timeEnd", timeEnd);
+			json.put("NATSuccessRate", "");
 			TCPThread.send(json, "/api/peer/natsuccrate", writer);
 		} catch (JSONException e) {
 			e.printStackTrace();

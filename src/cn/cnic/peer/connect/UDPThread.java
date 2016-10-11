@@ -124,6 +124,7 @@ public class UDPThread implements Runnable {
 				
 				//收到握手响应后，判断是否已全部返回，如果是，则对视频进行拼接
 				else if(action.equals(Constant.ACTION_P2P_HANDSHAKE_RESPONSE)) {
+					UploadInfoThread.NATSuccessCount ++;
 					String contentHash = json.getString(Constant.CONTENT_HASH);
 //					mapCurrent.put(contentHash, mapCurrent.get(contentHash) + 1);
 					mapCurrent.put(contentHash, mapCurrent.get(contentHash) + 1);

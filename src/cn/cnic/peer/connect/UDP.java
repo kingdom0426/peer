@@ -9,9 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import android.util.Log;
-
 import cn.cnic.peer.cons.Constant;
 import cn.cnic.peer.entity.Piece;
+import cn.cnic.peer.entity.Statis;
+import cn.cnic.peer.util.Util;
 
 public class UDP {
 
@@ -85,6 +86,8 @@ public class UDP {
 	
 	public static void submitP2PPieceRequest(DatagramSocket ds, String contentHash, int requestOffset, int requestLength, String targetPeerIP, int targetPeerPort) {
 		try {
+			String timeStart = Util.formatTimeNow();
+			
 			JSONObject json = new JSONObject();
 			json.put(Constant.ACTION, Constant.ACTION_P2P_PIECE_REQUEST);
 			json.put(Constant.PEER_ID, Constant.PEER_ID_VALUE);
@@ -97,6 +100,13 @@ public class UDP {
 			Log.d("udpsend", data);
 			DatagramPacket p = new DatagramPacket(data.getBytes(), data.getBytes().length, InetAddress.getByName(targetPeerIP), targetPeerPort);
 			ds.send(p);
+			
+			String timeEnd = Util.formatTimeNow();
+			Statis statis = new Statis();
+			statis.baseSet(Constant.PEER_ID_VALUE, timeStart, timeEnd);
+			statis.setUploadPeakRate(String.valueOf(data.getBytes().length));
+			UploadInfoThread.uploadVolumeList.add(statis);
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
