@@ -15,6 +15,7 @@ import cn.cnic.peer.connect.TCPThread;
 import cn.cnic.peer.connect.UDPThread;
 import cn.cnic.peer.connect.UploadInfoThread;
 import cn.cnic.peer.cons.Constant;
+import cn.cnic.peer.sqlite.DB;
 
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -31,36 +32,38 @@ public class MainActivity extends Activity {
 	private TextView mTipsTextView;
 	private VideoServer mVideoServer;
 	private long exitTime = 0;
-	public static Map<String, Boolean> map = new HashMap<String, Boolean>();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		mTipsTextView = (TextView) findViewById(R.id.TipsTextView);
-		mVideoServer = new VideoServer();
+		mVideoServer = new VideoServer(this);
 		mTipsTextView.setText("请在远程浏览器中输入:\n\n" + getLocalIpStr(this) + ":"	+ Constant.LOCAL_SERVER_PORT);
 		
-		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
-		String peerID = getPeerId();
-		if(peerID == null || "".equals(peerID)) {
-			writePeerId("qinyifangpeer");
-		}
-		Constant.PEER_ID_VALUE = getPeerId();
+		//初始化数据库
+		DB.initDB(this);
 		
-		
-		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
-		//启动TCP连接tracker，用于与tracker通信
-		TCPThread tcp = new TCPThread();
-		Thread t1 = new Thread(tcp);
-		t1.start();
-		
-		//启动UDP线程，用于peer间数据通信
-		UDPThread udp = new UDPThread();
-		Thread t3 = new Thread(udp);
-		t3.start();
-		
-		new Thread(new UploadInfoThread(Constant.PEER_ID_VALUE, null)).start();
+//		//判断PEER_ID_FILE是否存在，如果不存在，则创建，写入ID值，最后将值赋给PEER_ID_VALUE
+//		String peerID = getPeerId();
+//		if(peerID == null || "".equals(peerID)) {
+//			writePeerId("qinyifangpeer");
+//		}
+//		Constant.PEER_ID_VALUE = getPeerId();
+//		
+//		
+//		Constant.LOCAL_SERVER_IP = getLocalIpStr(this);
+//		//启动TCP连接tracker，用于与tracker通信
+//		TCPThread tcp = new TCPThread();
+//		Thread t1 = new Thread(tcp);
+//		t1.start();
+//		
+//		//启动UDP线程，用于peer间数据通信
+//		UDPThread udp = new UDPThread();
+//		Thread t3 = new Thread(udp);
+//		t3.start();
+//		
+//		new Thread(new UploadInfoThread(Constant.PEER_ID_VALUE, null)).start();
 		try {
 			mVideoServer.start();
 		} catch (IOException e) {
@@ -92,7 +95,7 @@ public class MainActivity extends Activity {
 	            finish();
 	            System.exit(0);
 	        }
-	        return true;   
+	        return true;
 	    }
 	    return super.onKeyDown(keyCode, event);
 	}
